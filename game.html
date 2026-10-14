@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css">
+</head>
+<body id="game_body">
+
+
+    
+    <div id="game_container">
+        <div id="info_board">
+            <div id="score_info">
+                <p id="score">Score: <span>14050</span></p>
+                <p id="high_score">Highest Score: <span>256789</span></p>
+            </div>
+            <div id="level_info">
+                Level 1: <span>Boot Sequence</span>
+            </div>
+            <div id="live_info">
+                <ul id="live_heart">
+
+                </ul>
+            </div>
+        </div>
+        <canvas id="game"></canvas>
+    </div>
+
+    <div class="overlay">
+        <div class="pause_menu">
+            <h1 id="title_menu">Pause</h1>
+            <div class="pause_container">
+                <a id="resume"> resume<i class="fa-solid fa-play"></i></a>
+                <a id="restart"> restart <i class="fa-solid fa-arrow-rotate-right"></i></a>
+                <a id="level" href="./levels.html"> select level<i class="fa-sharp fa-solid fa-table-cells-large"></i></a>
+                <a id="main" href="./index.html"> main menu<i class="fa-solid fa-house"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="brief">
+
+        <header>
+            <h1>LEVEL 4: <span>BREAKPOINT</span></h1>
+        </header>
+        <div class="brief_container">
+            <div class="brief_target">
+                <p>Destroy all blocks to complete the levels</p>
+            </div>
+            <div class="brief_mechanics">
+                <ul>
+
+                </ul>
+            </div>
+        </div>
+        <button>Let's go <i class="fa-solid fa-play"></i></button>
+        <p class="start_guide">Press <span>space</span> or <span>Enter</span> to launch</p>
+    </div>
+
+
+
+
+<script type="module" src="./scripts/assets.js" defer></script>
+<script type="module" src="./scripts/main.js" defer></script>
+</body>
+</html>

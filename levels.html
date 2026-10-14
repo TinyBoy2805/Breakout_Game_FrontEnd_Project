@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PingPong-Levels</title>
+    <link rel="stylesheet" href="./styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css">
+</head>
+<body id="levels_body">
+
+    <template id="level_box_template">
+        <div class="level_box">
+            <header class="">
+                <p class="level_number">1</p>
+                <p class="completed_badge"></p>
+            </header>
+            <div class="content">
+                <p class="level_title"></p>
+                <p class="difficult_title">Diff: <span class="difficult_type"></span></p>
+            </div>
+            <a class="play_level">Play<i class="fa-solid fa-play"></i></a>
+        </div>
+    </template>
+
+    <div class="levels">
+        <header id="level_header">
+            <h1><i class="fa-sharp fa-solid fa-table-cells-large"></i> SELECT LEVELS</h1>
+            <a id="main_menu" href="./index.html"><i class="fa-solid fa-arrow-left-long"></i> Main Menu</a>
+        </header>
+        <div class="level_container">
+
+        </div>
+    </div>
+
+
+
+
+
+<script type="module" src="./scripts/levelUI.js" defer></script>
+</body>
+</html>
