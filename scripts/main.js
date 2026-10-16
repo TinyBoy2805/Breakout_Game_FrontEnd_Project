@@ -7,7 +7,7 @@ import BAR from './bar.js'
 import user from './user_info.js'
 import TUNNEL from './portal.js'
 import MAPS from './map_level.js'
-import createBlackHole from './black_hole.js'
+import BH from './black_hole.js'
 import SHIELD from './shield.js'
 import MOVINGS from './moving_wall.js'
 import createMomentumField from './momentum_field.js'
@@ -88,6 +88,8 @@ function renderBrief(show = false)
         briefUI.style.display = 'none'
     })
 
+    briefUI.querySelector('.brief_mechanics').querySelector('ul').innerHTML = ''
+
     for(const mecha of levelBrief?.mechanics)
     {
         const li = document.createElement('li')
@@ -116,7 +118,7 @@ function beforeStart()
     }
 }
 
-// beforeStart()
+beforeStart()
 
 function renderInfoBoard()
 {
@@ -212,7 +214,6 @@ function renderDrops()
     }
 }
 
-// const tunnel = mapLevel?.tunnel ? TUNNEL.createTunnel(0, 100, gameConfig.configs.GAME_WIDTH-5, 20*25 - 150 + 100, "#ff7700", "#00f2ff", 5, 150, true) :""
 
 BALL.balls.push(BALL.createBall(BAR.x+BAR.width/2, BAR.y-25))
 function renderBalls()
@@ -320,19 +321,19 @@ function handleLoose()
 }
 
 
-// const black_hole = createBlackHole(350, 350)
-// const black_hole2 = createBlackHole(850, 350)
+if(mapLevel?.blackhole)
+{
+    BH.holes.push(BH.createBlackHole(350, 350))
+}
 
-// const black_holes = [black_hole, black_hole2]
-
-// function renderBlackHoles()
-// {
-//     for(const bh of black_holes)
-//     {
-//         bh.update()
-//         bh.draw(ctx)
-//     }
-// }
+function renderBlackHoles()
+{
+    for(const bh of BH.holes)
+    {
+        bh.update()
+        bh.draw(ctx)
+    }
+}
 
 function renderBar()
 {
@@ -351,6 +352,23 @@ function spawnMeteor()
     {
         const spawnX = Math.floor(Math.random()*(gameConfig.WALLS.RIGHT - gameConfig.configs.TILE_SIZE*2))+(gameConfig.configs.TILE_SIZE*2)
         const spawnY = mapLevel?.map.length * gameConfig.configs.TILE_SIZE + 10
+
+        for(let i=0; i<10; i++)
+        {
+            particle_manager.addParticle(
+                spawnX,
+                spawnY,
+                {
+                    alpha: 1,
+                    color: "#ffa600",
+                    gravity: 0.3,
+                    angle: Math.random() * (Math.PI * 2),
+                    speed: 1,
+                    life: 30,
+                    radius: 5
+                }
+            )
+        }
         TEXT_FLY.text_flies.push(TEXT_FLY.createTextFly(
             spawnX,
             spawnY,
@@ -402,21 +420,18 @@ function renderMovingWalls()
 }
 
 
-if(mapLevel?.shield)
+
+
+const tunnel = mapLevel?.tunnel ? TUNNEL.createTunnel(0, 100, gameConfig.configs.GAME_WIDTH-5, 20*25 - 150 + 100, "#ff7700", "#00f2ff", 5, 150, true) :""
+
+function renderTunnel()
 {
-    SHIELD.shield = SHIELD.createShield()
+    if(tunnel)
+    {
+        tunnel.update()
+        tunnel.draw(ctx)
+    }
 }
-
-
-
-// function renderTunnel()
-// {
-//     if(tunnel)
-//     {
-//         tunnel.update()
-//         tunnel.draw(ctx)
-//     }
-// }
 
 let filed_timer = 0;
 let field_duration = 1000;
@@ -463,13 +478,13 @@ function renderTextFly()
     }
 }
 
+
+SHIELD.shield = SHIELD.createShield()
+
 function renderShield()
 {
-   if(mapLevel?.shield && SHIELD?.shield)
-   {
-        SHIELD?.shield.update()
-        SHIELD?.shield.draw(ctx)
-   }
+    SHIELD?.shield.update()
+    SHIELD?.shield.draw(ctx)    
 }
 
 
@@ -496,9 +511,9 @@ function startLoop()
             field.draw(ctx)
         }
 
-        // renderBlackHoles()
+        renderBlackHoles()
 
-        // renderTunnel()
+        renderTunnel()
 
 
 

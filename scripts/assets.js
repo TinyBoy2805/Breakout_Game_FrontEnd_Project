@@ -34,6 +34,9 @@ const sprites = {
         await loadImage('../imgs/drop2.png'),
         await loadImage('../imgs/drop3.png'),
         await loadImage('../imgs/drop4.png'),
+    ],
+    "SHIELD": [
+        await loadImage('../imgs/shield.png')
     ]
 
 }

@@ -49,11 +49,11 @@ const BLOCK_DATAS = {
     },
     [BLOCK_TYPES.TELEPORT_BLOCK]:
     {
-
+        score: 0
     },
     [BLOCK_TYPES.CORRUPTION_BLOCK]:
     {
-        
+        score: 0
     }
 
 }

@@ -2,7 +2,7 @@
 import gameConfig from './game_config.js'
 import BALL from './ball.js'
 import particle_manager from './particles.js'
-
+import BRICK from './brick.js'
 
 
 
@@ -23,45 +23,96 @@ const createBlackHole = (x, y)=>
         gravity: 0.5,
         angle: 0,
         pulse: 0,
+        minX: 0,
+        maxX: 1100,
+        speed: 0.5,
+        velX: 1,
 
         update: function()
         {
             this.collideWithBall()
+            this.move()
+            this.pullDrops()
+        },
+
+        pullDrops: function()
+        {
+            for(let i=0; i<BRICK.drops.length; i++)
+            {
+                const drop = BRICK.drops[i]
+
+                const dropCenterX = drop.x * gameConfig.configs.TILE_SIZE + drop.width / 2
+                const dropCenterY = drop.y * gameConfig.configs.TILE_SIZE + drop.height / 2
+
+                const dx = this.x - dropCenterX
+                const dy = this.y - dropCenterY
+
+                const dis = Math.sqrt(dx*dx + dy*dy)
+
+                if(dis < this.impact_range)
+                {
+                    
+                    if(dis < 10)
+                    {
+                        drop.destroyed = true
+                    }
+                    
+                    const dx = this.x - dropCenterX
+                    const dy = this.y - dropCenterY
+                    const angle = Math.atan2(dy, dx)
+
+                    drop.velX += Math.cos(angle) * this.gravity
+                    drop.velY += Math.sin(angle) * this.gravity
+                    
+                }
+
+
+            }
+        },
+
+        changeObjDirection: function(obj)
+        {
+            const dx = this.x - obj.x
+            const dy = this.y - obj.y
+            const angle = Math.atan2(dy, dx)
+
+            obj.velX += Math.cos(angle) * this.gravity
+            obj.velY += Math.sin(angle) * this.gravity
+        },
+
+        move: function()
+        {
+            this.x += this.speed * this.velX
+            if(this.x  >= this.maxX)
+            {
+                this.x = this.maxX
+                this.velX *= -1
+            }else if(this.x <= this.minX)
+            {
+                this.x = this.minX
+                this.velX *= -1
+            }
         },
 
         collideWithBall: function()
         {
             for(const ball of BALL.balls)
             {
-                const {ball_t, ball_r, ball_b, ball_l} = {
-                    ball_t: ball.y - ball.radius,
-                    ball_r: ball.x + ball.radius,
-                    ball_b: ball.y + ball.radius,
-                    ball_l: ball.x - ball.radius
-                }
+                const dx = this.x - ball.x
+                const dy = this.y - ball.y
 
-                if(
-                    ball_t <= this.y + this.impact_range+this.plus_impact_range &&
-                    ball_b >= this.y - this.impact_range-this.plus_impact_range &&
-                    ball_l <= this.x + this.impact_range+this.plus_impact_range &&
-                    ball_r >= this.x - this.impact_range-this.plus_impact_range
-                )
+                const distance = Math.sqrt(dx*dx + dy*dy)
+
+                if(distance < this.impact_range + this.plus_impact_range)
                 {
-                    this.changeBallDirection(ball)
-                }
+                    ball.speed = (ball.speed - 2) <= 0 ? 0.5 : ball.speed - 2
+                    this.changeObjDirection(ball)
+                }else ball.speed = 2
 
             }
         },
 
-        changeBallDirection: function(ball)
-        {
-            const dx = this.x - ball.x
-            const dy = this.y - ball.y
-            const angle = Math.atan2(dy, dx)
 
-            ball.velX += Math.cos(angle) * this.gravity
-            ball.velY += Math.sin(angle) * this.gravity
-        },
 
         draw: function(ctx)
         {
@@ -103,8 +154,9 @@ const createBlackHole = (x, y)=>
 
 }
 
+const holes = []
 
-export default createBlackHole
+export default {createBlackHole, holes}
 
 
 

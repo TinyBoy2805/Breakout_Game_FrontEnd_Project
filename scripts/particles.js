@@ -47,7 +47,7 @@ const createParticle = (x, y, config)=>
 
 const particle_manager = {
     particles: [],
-    addParticle: function(x, y, config,)
+    addParticle: function(x, y, config)
     {
         const p = createParticle(x, y, config)
         this.particles.push(p)

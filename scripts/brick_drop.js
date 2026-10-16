@@ -3,6 +3,7 @@ import gameConfig from "./game_config.js"
 import BAR from "./bar.js"
 import BALL from "./ball.js"
 import sprites from "./assets.js"
+import SHIELD from './shield.js'
 
 
 const createDrop = (x, y, type = 'bonus')=>
@@ -10,11 +11,14 @@ const createDrop = (x, y, type = 'bonus')=>
     return {
         x,
         y,
+        velX: 0,
+        velY: 1,
         width: gameConfig.configs.TILE_SIZE,
         height: gameConfig.configs.TILE_SIZE,
         speed: 0.02,
         destroyed: false,
-        bonusDrop: Math.floor((Math.random()*4)+1),
+        bonusDrop:  Math.floor((Math.random()*4)+1),
+        shieldAdd:  Math.floor((Math.random()*10)+1), 
 
         update: function()
         {
@@ -27,14 +31,25 @@ const createDrop = (x, y, type = 'bonus')=>
 
             ctx.shadowBlur = 10
             ctx.shadowColor = "white"
-            ctx.drawImage(sprites.DROP[this.bonusDrop-1] ,this.x*gameConfig.configs.TILE_SIZE, this.y*gameConfig.configs.TILE_SIZE, this.width, this.height)
+
+
+            switch(type)
+            {
+                case 'bonus':
+                    ctx.drawImage(sprites.DROP[this.bonusDrop-1] ,this.x*gameConfig.configs.TILE_SIZE, this.y*gameConfig.configs.TILE_SIZE, this.width, this.height)
+                    break;
+                case 'shield':
+                    ctx.drawImage(sprites.SHIELD[0] ,this.x*gameConfig.configs.TILE_SIZE, this.y*gameConfig.configs.TILE_SIZE, this.width, this.height)
+                    break;
+            }
+            
             ctx.shadowBlur = 0
             ctx.shadowColor = "transparent"
         },
 
         fall: function()
         {
-            this.y += this.speed
+            this.y += this.speed * this.velY
         },
 
         collideWithBar: function()
@@ -47,11 +62,17 @@ const createDrop = (x, y, type = 'bonus')=>
             )
             {
 
-                for(let i=0; i<this.bonusDrop; i++)
+                if(type === 'bonus')
                 {
-                    const ball = BALL.createBall(BAR.x+BAR.width/2, BAR.y - 25)
-                    ball.velX = i*0.25
-                    BALL.balls.push(ball)
+                    for(let i=0; i<this.bonusDrop; i++)
+                    {
+                        const ball = BALL.createBall(BAR.x+BAR.width/2, BAR.y - 25)
+                        ball.velX = i*0.25
+                        BALL.balls.push(ball)
+                    }
+                }else 
+                {
+                    SHIELD?.shield?.addShield(this.shieldAdd)
                 }
                 this.destroyed = true
             }

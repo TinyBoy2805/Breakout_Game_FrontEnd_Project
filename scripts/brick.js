@@ -10,12 +10,13 @@ import TEXT_FLY from './text_fly.js'
 
 user.level = localStorage.getItem("level")
 
+const currentMap = MAPS[`level${user.level}`]
 
 
 const convertToObjectMap = ()=>
 {
     const obj_map = []
-    const id_map =  MAPS[`level${user.level}`]?.map
+    const id_map =  currentMap?.map
 
     for(let y=0; y<id_map.length; y++)
     {
@@ -34,7 +35,18 @@ const brick = {
     type: "brick",
     map: convertToObjectMap(),
     drops: [],
-    dropRate: 0.12,
+    dropRate: 0.05,
+
+    getRandomPosition: function()
+    {   
+        const teleY = (this.map.length*gameConfig.configs.TILE_SIZE + 100)
+        const startX = 100
+        const endX = gameConfig.configs.GAME_WIDTH - 100
+
+        const teleX = Math.floor((Math.random() * endX) + startX)
+
+        return {teleX, teleY}
+    },
 
     removeBlock: function(x, y)
     {
@@ -46,7 +58,7 @@ const brick = {
     {
         if(Math.random() < this.dropRate)
         {
-            this.drops.push(createDrop(x, y))
+            this.drops.push(createDrop(x, y, (Math.random() < 0.15 && currentMap?.shield) ? 'shield' : 'bonus'))
         }
     },
 
@@ -61,58 +73,73 @@ const brick = {
                 centerY: newY * gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2
             }
             if(this.checkOutOfRange(newX, newY)) continue;
-
-            const obj = this.map[newY][newX]
-            switch(obj?.type)
+            setTimeout(()=>
             {
-                case BLOCK.BLOCK_TYPES.BOMB:
-                    this.explode(newX, newY, obj?.data?.explode_radius)
-                    break;
-                case BLOCK.BLOCK_TYPES.BOMB_SEEDER:
-                    this.spawnBomb(newX, newY)
-                    break;
-                case BLOCK.BLOCK_TYPES.MULTIPLE_SEEDER:
-                    this.spawnMultyBreak(newX, newY)
-                    break;
-                case BLOCK.BLOCK_TYPES.BRICK1:
-                    this.removeBlock(newX, newY)
-                    break;
-                case BLOCK.BLOCK_TYPES.WALL:
-                    break;
-                case BLOCK.BLOCK_TYPES.BLOCK_EATER:
-                    this.eatBlock(newX, newY, direction)
-                    break;
-            }
+                const obj = this.map[newY][newX]
+                switch(obj?.type)
+                {
+                    case BLOCK.BLOCK_TYPES.BOMB:
+                        this.explode(newX, newY, obj?.data?.explode_radius)
+                        break;
+                    case BLOCK.BLOCK_TYPES.BOMB_SEEDER:
+                        this.spawnBomb(newX, newY)
+                        break;
+                    case BLOCK.BLOCK_TYPES.MULTIPLE_BREAK:
+                        obj.data.breakCount--;
+                        obj.sprite = sprites[obj.type][obj.data.maxBreak - obj.data.breakCount]
+                        if(obj.data.breakCount <= 0)
+                        {
+                            this.removeBlock(newX, newY);
+                        }
+                        break;
+                    case BLOCK.BLOCK_TYPES.MULTIPLE_SEEDER:
+                        this.spawnMultyBreak(newX, newY)
+                        break;
+                    case BLOCK.BLOCK_TYPES.BRICK1:
+                        this.removeBlock(newX, newY)
+                        break;
+                    case BLOCK.BLOCK_TYPES.WALL:
+                        break;
+                    case BLOCK.BLOCK_TYPES.BLOCK_EATER:
+                        this.eatBlock(newX, newY, direction)
+                        break;
+                    case BLOCK.BLOCK_TYPES.TELEPORT_BLOCK:
+                        break;
+                    case BLOCK.BLOCK_TYPES.CORRUPTION_BLOCK:
+                        this.doCorrupt(newX, newY)
+                        break;
+                }
 
-            const obj_score = obj?.data?.score
-            if(obj_score > 0)
-            {
-                user.addScore(obj_score)
-                TEXT_FLY.text_flies.push(TEXT_FLY.createTextFly(centerX, centerY, `+${obj_score}`, {
-                    font: "12px Arial bold",
-                    color: "#fafafa",
-                    align: "center",
-                    baseLine: "middle",
-                    lifeTime: 50
-                }))
-            }
+                const obj_score = obj?.data?.score
+                if(obj_score > 0)
+                {
+                    user.addScore(obj_score)
+                    TEXT_FLY.text_flies.push(TEXT_FLY.createTextFly(centerX, centerY, `+${obj_score}`, {
+                        font: "12px Arial bold",
+                        color: "#fafafa",
+                        align: "center",
+                        baseLine: "middle",
+                        lifeTime: 50
+                    }))
+                }
 
-            for(let j=0; j<5; j++)
-            {
-                particle_manager.addParticle(
-                    newX*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
-                    newY*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
-                    {
-                        alpha: 1,
-                        color: "#7e2eff",
-                        gravity: 0.3,
-                        angle: Math.random() * (Math.PI * 2),
-                        speed: 1,
-                        life: 30,
-                        radius: 3
-                    }
-                )
-            }
+                for(let j=0; j<5; j++)
+                {
+                    particle_manager.addParticle(
+                        newX*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                        newY*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                        {
+                            alpha: 1,
+                            color: "#7e2eff",
+                            gravity: 0.3,
+                            angle: Math.random() * (Math.PI * 2),
+                            speed: 1,
+                            life: 30,
+                            radius: 3
+                        }
+                    )
+                }
+            }, 50 * i)
         }
     },
 
@@ -131,26 +158,29 @@ const brick = {
 
                 if(this.checkOutOfRange(c, r)) continue;
 
-                if(r === startRow || r === endRow || c === startCol || c === endCol)
+                setTimeout(()=>
                 {
-                    this.map[r][c] = block(BLOCK.BLOCK_TYPES.MULTIPLE_BREAK);
-                    for(let j=0; j<5; j++)
+                    if(r === startRow || r === endRow || c === startCol || c === endCol)
                     {
-                        particle_manager.addParticle(
-                            c*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
-                            r*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
-                            {
-                                alpha: 1,
-                                color: "#10dfff",
-                                gravity: 0.3,
-                                angle: Math.random() * (Math.PI * 2),
-                                speed: 1,
-                                life: 30,
-                                radius: 6
-                            }
-                        )
+                        this.map[r][c] = block(BLOCK.BLOCK_TYPES.MULTIPLE_BREAK);
+                        for(let j=0; j<5; j++)
+                        {
+                            particle_manager.addParticle(
+                                c*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                                r*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                                {
+                                    alpha: 1,
+                                    color: "#10dfff",
+                                    gravity: 0.3,
+                                    angle: Math.random() * (Math.PI * 2),
+                                    speed: 1,
+                                    life: 30,
+                                    radius: 6
+                                }
+                            )
+                        }
                     }
-                }
+                }, 50 * r)
             }
         }
 
@@ -198,6 +228,9 @@ const brick = {
                     case BLOCK.BLOCK_TYPES.BLOCK_EATER:
                         this.eatBlock(c, r, [-1, 0])
                         break;
+                    case BLOCK.BLOCK_TYPES.CORRUPTION_BLOCK:
+                        this.doCorrupt(c, r)
+                        break;
 
                 }
 
@@ -235,14 +268,95 @@ const brick = {
     },
 
 
+    doCorrupt: function(x, y)
+    {
+        this.removeBlock(x, y)
+
+        const startRow = y-2;
+        const startCol = x-2
+        const endRow = y+2
+        const endCol = x+2
+        for(let r = startRow; r<=endRow; r++)
+        {
+            for(let c = startCol; c<=endCol; c++)
+            {
+
+                if(this.checkOutOfRange(c, r)) continue;
+
+                setTimeout(()=>
+                {
+                    if(r === startRow || r === endRow || c === startCol || c === endCol)
+                    {
+                        const ranBlock = Math.floor((Math.random()*Object.keys(BLOCK.BLOCK_TYPES).length)+1)
+                        this.map[r][c] = block(
+                            ranBlock === BLOCK.BLOCK_TYPES.WALL 
+                            ? 
+                            BLOCK.BLOCK_TYPES.BRICK1
+                            :
+                            ranBlock
+                        );
+                        for(let j=0; j<5; j++)
+                        {
+                            particle_manager.addParticle(
+                                c*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                                r*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                                {
+                                    alpha: 1,
+                                    color: "#ff9b10",
+                                    gravity: 0.3,
+                                    angle: Math.random() * (Math.PI * 2),
+                                    speed: 1,
+                                    life: 30,
+                                    radius: 5
+                                }
+                            )
+                        }
+                        for(let j=0; j<5; j++)
+                        {
+                            particle_manager.addParticle(
+                                c*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                                r*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                                {
+                                    alpha: 1,
+                                    color: "#af10ff",
+                                    gravity: 0.3,
+                                    angle: Math.random() * (Math.PI * 2),
+                                    speed: 1,
+                                    life: 30,
+                                    radius: 4
+                                }
+                            )
+                        }
+                    }
+                }, 50 * r)
+            }
+        }
+
+
+
+    },
 
     spawnBomb: function(x, y)
     {
         this.removeBlock(x, y)
-        if(!this.checkOutOfRange(x-1, y-1)) this.map[y-1][x-1] = block(BLOCK.BLOCK_TYPES.BOMB)
-        if(!this.checkOutOfRange(x+1, y+1)) this.map[y+1][x+1] = block(BLOCK.BLOCK_TYPES.BOMB)
-        if(!this.checkOutOfRange(x-1, y+1)) this.map[y+1][x-1] = block(BLOCK.BLOCK_TYPES.BOMB)
-        if(!this.checkOutOfRange(x+1, y-1)) this.map[y-1][x+1] = block(BLOCK.BLOCK_TYPES.BOMB)
+        const corrordinates = [
+            [x-1,y-1],
+            [x+1,y+1],
+            [x-1,y+1],
+            [x+1,y-1],
+        ]
+        
+        for(let i=0; i<corrordinates.length; i++)
+        {
+            setTimeout(()=>
+            {
+                if(!this.checkOutOfRange(corrordinates[i][0], corrordinates[i][1])) 
+                {
+                    this.map[corrordinates[i][1]][corrordinates[i][0]] = block(BLOCK.BLOCK_TYPES.BOMB)
+                }
+               
+            }, 50 * i)
+        }
     },
 
     checkOutOfRange: function(x, y)
@@ -260,70 +374,79 @@ const brick = {
         {
             for(let c = x-explode_radius; c<=x+explode_radius; c++)
             {
-                if(
-                    r >= 0 && r < this.map.length && c >= 0 && c < this.map[0].length
-                )
+                setTimeout(()=>
                 {
-                    const obj = this.map[r][c]
-                    if(obj)
+                    if(
+                        r >= 0 && r < this.map.length && c >= 0 && c < this.map[0].length
+                    )
                     {
-                        switch(obj.type)
+                        const obj = this.map[r][c]
+                        if(obj)
                         {
-                            case BLOCK.BLOCK_TYPES.WALL:
-                                continue;
-                            case BLOCK.BLOCK_TYPES.BOMB:
-                                this.removeBlock(c, r)
-                                this.explode(c, r, explode_radius)
-                                break;
-                            case BLOCK.BLOCK_TYPES.MULTIPLE_BREAK:
-                                obj.data.breakCount--;
-                                obj.sprite = sprites[obj.type][obj.data.maxBreak - obj.data.breakCount]
-                                if(obj.data.breakCount <= 0)
-                                {
-                                    this.removeBlock(c, r);
-                                }
-                                break;
-                            case BLOCK.BLOCK_TYPES.BOMB_SEEDER:
-                                this.spawnBomb(c, r)
-                                break;
-                            default:
-                                this.removeBlock(c, r)
-                                break;
-                        }
-                        const {centerX, centerY} = {
-                            centerX: c*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
-                            centerY: r*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2
-                        }
-                        const obj_score = obj?.data?.score
-                        if(obj_score > 0)
-                        {
-                            user.addScore(obj_score)
-                            TEXT_FLY.text_flies.push(TEXT_FLY.createTextFly(centerX, centerY, `+${obj_score}`, {
-                                font: "12px Arial bold",
-                                color: "#fafafa",
-                                align: "center",
-                                baseLine: "middle",
-                                lifeTime: 50
-                            }))
-                        }
-                        for(let i=0; i<5; i++)
-                        {
-                            particle_manager.addParticle(
-                                centerX,
-                                centerY,
-                                {
-                                    alpha: 1,
-                                    color: "#ff004c",
-                                    gravity: 0.3,
-                                    angle: Math.random() * (Math.PI * 2),
-                                    speed: 1,
-                                    life: 30,
-                                    radius: 3
-                                }
-                            )
+                            switch(obj.type)
+                            {
+                                case BLOCK.BLOCK_TYPES.WALL:
+                                    break;
+                                case BLOCK.BLOCK_TYPES.BOMB:
+                                    this.removeBlock(c, r)
+                                    this.explode(c, r, explode_radius)
+                                    break;
+                                case BLOCK.BLOCK_TYPES.MULTIPLE_BREAK:
+                                    obj.data.breakCount--;
+                                    obj.sprite = sprites[obj.type][obj.data.maxBreak - obj.data.breakCount]
+                                    if(obj.data.breakCount <= 0)
+                                    {
+                                        this.removeBlock(c, r);
+                                    }
+                                    break;
+                                case BLOCK.BLOCK_TYPES.BOMB_SEEDER:
+                                    this.spawnBomb(c, r)
+                                    break;
+                                case BLOCK.BLOCK_TYPES.CORRUPTION_BLOCK:
+                                    this.doCorrupt(c, r)
+                                    break;
+                                case BLOCK.BLOCK_TYPES.MULTIPLE_SEEDER:
+                                    this.spawnMultyBreak(c, r)
+                                    break;
+                                default:
+                                    this.removeBlock(c, r)
+                                    break;
+                            }
+                            const {centerX, centerY} = {
+                                centerX: c*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2,
+                                centerY: r*gameConfig.configs.TILE_SIZE + gameConfig.configs.TILE_SIZE/2
+                            }
+                            const obj_score = obj?.data?.score
+                            if(obj_score > 0)
+                            {
+                                user.addScore(obj_score)
+                                TEXT_FLY.text_flies.push(TEXT_FLY.createTextFly(centerX, centerY, `+${obj_score}`, {
+                                    font: "12px Arial bold",
+                                    color: "#fafafa",
+                                    align: "center",
+                                    baseLine: "middle",
+                                    lifeTime: 50
+                                }))
+                            }
+                            for(let i=0; i<5; i++)
+                            {
+                                particle_manager.addParticle(
+                                    centerX,
+                                    centerY,
+                                    {
+                                        alpha: 1,
+                                        color: "#ff004c",
+                                        gravity: 0.3,
+                                        angle: Math.random() * (Math.PI * 2),
+                                        speed: 1,
+                                        life: 30,
+                                        radius: 5
+                                    }
+                                )
+                            }
                         }
                     }
-                }
+                }, 0 * r)
             }
         }
     },

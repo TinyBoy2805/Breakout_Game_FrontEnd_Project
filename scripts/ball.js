@@ -106,10 +106,6 @@ const createBall = (x, y, type = 'ball')=>
                 this.velX = Math.cos(bounce_angle)
                 this.velY = Math.sin(bounce_angle)
 
-                if(this.type !== 'ball')
-                {
-                    BAR.y += 10
-                }
             }else return;
 
 
@@ -184,7 +180,6 @@ const createBall = (x, y, type = 'ball')=>
 
                         color = "#fbff1d"
                         particleRadius = 3
-
                         break;
                     case BLOCK.BLOCK_TYPES.BOMB:
                         BRICK.explode(hitX, hitY, block.data.explode_radius)
@@ -216,7 +211,88 @@ const createBall = (x, y, type = 'ball')=>
                         BRICK.eatBlock(hitX, hitY, dir)
                         color = "#a217ff"
                         particleRadius = 3
-                    break;
+                        break;
+                    case BLOCK.BLOCK_TYPES.TELEPORT_BLOCK:
+                        BRICK.removeBlock(hitX, hitY)
+                        const {teleX, teleY}  = BRICK.getRandomPosition()
+                        color = "#00f0ff"
+                        particleRadius = 3
+                        let prevRaidus = this.radius
+                        this.radius = 0
+                        let prevSpeed = this.speed
+                        this.speed = 0
+                        for(let i=0; i<5; i++)
+                        {
+                            particle_manager.addParticle(
+                                centerX,
+                                centerY,
+                                {
+                                    alpha: 1,
+                                    color: "#ff8b0e",
+                                    gravity: 0.3,
+                                    angle: Math.random() * (Math.PI * 2),
+                                    speed: 1,
+                                    life: 30,
+                                    radius: particleRadius
+                                }
+                            )
+                        }
+                        setTimeout(()=>
+                        {
+                            for(let i=0; i<10; i++)
+                            {
+                                particle_manager.addParticle(
+                                    teleX,
+                                    teleY,
+                                    {
+                                        alpha: 1,
+                                        color,
+                                        gravity: 0.3,
+                                        angle: Math.random() * (Math.PI * 2),
+                                        speed: 1,
+                                        life: 30,
+                                        radius: particleRadius
+                                    }
+                                )
+                            }
+                            for(let i=0; i<5; i++)
+                            {
+                                particle_manager.addParticle(
+                                    teleX,
+                                    teleY,
+                                    {
+                                        alpha: 1,
+                                        color: "#ff8b0e",
+                                        gravity: 0.3,
+                                        angle: Math.random() * (Math.PI * 2),
+                                        speed: 1,
+                                        life: 30,
+                                        radius: particleRadius
+                                    }
+                                )
+                            }
+                            TEXT_FLY.text_flies.push(TEXT_FLY.createTextFly(teleX, teleY, `?`, {
+                                font: "25px Arial bold",
+                                color: "#ff8306",
+                                align: "center",
+                                baseLine: "middle",
+                                lifeTime: 50
+                            }))
+                        }, 500)
+
+                        setTimeout(()=>
+                        {
+                            this.x = teleX
+                            this.y = teleY
+                            this.velY = Math.abs(this.velY)
+                            this.speed = prevSpeed + 0.5
+                            this.radius = prevRaidus
+                        }, 1500)
+
+                        break;
+                    case BLOCK.BLOCK_TYPES.CORRUPTION_BLOCK:
+                        BRICK.doCorrupt(hitX, hitY)
+                        break;
                 }
 
                 if(block.data.score > 0)
@@ -426,6 +502,7 @@ const createBall = (x, y, type = 'ball')=>
                         this.x += this.radius
                     }
 
+
                     for(let i = 0; i<5; i++)
                     {
                         particle_manager.addParticle(
@@ -433,7 +510,7 @@ const createBall = (x, y, type = 'ball')=>
                             this.y,
                             {
                                 alpha: 1,
-                                color: "#fbca1a",
+                                color: "#fbac1a",
                                 gravity: 0.3,
                                 angle: Math.random() * (Math.PI * 2),
                                 speed: 1,
